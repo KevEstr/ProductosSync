@@ -1,0 +1,98 @@
+2026-03-12 12:46:41 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 12:46:41 - src.dbf_reader - INFO - Iniciando lectura de inventario con precios...
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Leídos 9445 registros de Producto.DBF
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Productos leídos: 9445 en 0.59s
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Leyendo inventario del mes actual: MovMes03.DBF
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Leídos 1493 registros de MovMes03.DBF
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Registros de movimientos leídos: 1493
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Productos con movimientos: 462
+2026-03-12 12:46:42 - src.dbf_reader - INFO - Obtenido inventario completo de 9393 productos
+2026-03-12 12:49:30 - __main__ - INFO - ================================================================================
+2026-03-12 12:49:30 - __main__ - INFO - Iniciando Product-Sync API - Inventario y Precios
+2026-03-12 12:49:30 - __main__ - INFO - ================================================================================
+2026-03-12 12:49:30 - __main__ - INFO - ================================================================================
+2026-03-12 12:49:30 - __main__ - INFO - INICIANDO PRE-CARGA DE CACHÉ
+2026-03-12 12:49:30 - __main__ - INFO - ================================================================================
+2026-03-12 12:49:30 - __main__ - INFO - Caché no encontrado, cargando desde DBF...
+2026-03-12 12:49:30 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 12:49:30 - __main__ - INFO - Leyendo archivos DBF...
+2026-03-12 12:49:30 - src.dbf_reader - INFO - Iniciando lectura de inventario con precios...
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Leídos 9445 registros de Producto.DBF
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Productos leídos: 9445 en 0.54s
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Leyendo inventario del mes actual: MovMes03.DBF
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Leídos 1493 registros de MovMes03.DBF
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Registros de movimientos leídos: 1493
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Productos con movimientos: 462
+2026-03-12 12:49:31 - src.dbf_reader - INFO - Obtenido inventario completo de 9393 productos
+2026-03-12 12:49:31 - __main__ - INFO - Caché cargado: 9393 productos
+2026-03-12 12:49:31 - __main__ - INFO - Tiempo total: 0.93s
+2026-03-12 12:49:31 - __main__ - INFO - ================================================================================
+2026-03-12 12:49:31 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 12:49:31 - src.api - INFO - DBFReader inicializado correctamente
+2026-03-12 12:49:31 - src.api - INFO - Aplicación Flask creada y configurada
+2026-03-12 12:49:31 - src.scheduler - INFO - Scheduler iniciado. Intervalo: 10 minutos
+2026-03-12 12:49:31 - __main__ - INFO - Servidor iniciando en 0.0.0.0:5000
+2026-03-12 12:49:31 - __main__ - INFO - Ruta DBF: DbfRed
+2026-03-12 12:49:31 - __main__ - INFO - Sincronización automática cada 10 minutos
+2026-03-12 12:49:31 - __main__ - INFO - Ambiente: production
+2026-03-12 12:49:31 - __main__ - INFO - ================================================================================
+2026-03-12 12:59:31 - src.dbf_reader - INFO - Iniciando lectura de inventario con precios...
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Leídos 9445 registros de Producto.DBF
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Productos leídos: 9445 en 0.78s
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Leyendo inventario del mes actual: MovMes03.DBF
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Leídos 1493 registros de MovMes03.DBF
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Registros de movimientos leídos: 1493
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Productos con movimientos: 462
+2026-03-12 12:59:32 - src.dbf_reader - INFO - Obtenido inventario completo de 9393 productos
+2026-03-12 12:59:32 - src.scheduler - INFO - Cache actualizado: 9393 productos en 1.34s
+2026-03-12 16:45:10 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:10 - __main__ - INFO - Iniciando Product-Sync API - Inventario y Precios
+2026-03-12 16:45:10 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:10 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:10 - __main__ - INFO - INICIANDO PRE-CARGA DE CACHÉ
+2026-03-12 16:45:10 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:10 - __main__ - INFO - Caché no encontrado, cargando desde DBF...
+2026-03-12 16:45:10 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 16:45:10 - __main__ - INFO - Leyendo archivos DBF...
+2026-03-12 16:45:10 - src.dbf_reader - INFO - Iniciando lectura de inventario con precios...
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Leídos 9445 registros de Producto.DBF
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Productos leídos: 9445 en 0.50s
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Leyendo inventario del mes actual: MovMes03.DBF
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Leídos 1493 registros de MovMes03.DBF
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Registros de movimientos leídos: 1493
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Productos con movimientos: 462
+2026-03-12 16:45:11 - src.dbf_reader - INFO - Obtenido inventario completo de 9393 productos
+2026-03-12 16:45:11 - __main__ - INFO - Caché cargado: 9393 productos
+2026-03-12 16:45:11 - __main__ - INFO - Tiempo total: 1.04s
+2026-03-12 16:45:11 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:11 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 16:45:11 - src.api - INFO - DBFReader inicializado correctamente
+2026-03-12 16:45:11 - src.api - INFO - Aplicación Flask creada y configurada
+2026-03-12 16:45:11 - src.scheduler - INFO - Scheduler iniciado. Intervalo: 10 minutos
+2026-03-12 16:45:11 - __main__ - INFO - Servidor iniciando en 0.0.0.0:5000
+2026-03-12 16:45:11 - __main__ - INFO - Ruta DBF: DbfRed
+2026-03-12 16:45:11 - __main__ - INFO - Sincronización automática cada 10 minutos
+2026-03-12 16:45:11 - __main__ - INFO - Ambiente: production
+2026-03-12 16:45:11 - __main__ - INFO - ================================================================================
+2026-03-12 16:45:24 - src.api - WARNING - Acceso sin API key desde 127.0.0.1 [GET /api/productos]
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:04 - __main__ - INFO - Iniciando Product-Sync API - Inventario y Precios
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:04 - __main__ - INFO - INICIANDO PRE-CARGA DE CACHÉ
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:04 - __main__ - INFO - Caché encontrado en disco: 9393 productos
+2026-03-12 16:55:04 - __main__ - INFO - Pre-carga completada en 0.11s
+2026-03-12 16:55:04 - __main__ - INFO - El scheduler verificará actualizaciones periódicamente
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:04 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 16:55:04 - src.dbf_reader - INFO - DBFReader inicializado con ruta: DbfRed
+2026-03-12 16:55:04 - src.api - INFO - DBFReader inicializado correctamente
+2026-03-12 16:55:04 - src.api - INFO - Aplicación Flask creada y configurada
+2026-03-12 16:55:04 - src.scheduler - INFO - Scheduler iniciado. Intervalo: 10 minutos
+2026-03-12 16:55:04 - __main__ - INFO - Servidor iniciando en 0.0.0.0:5000
+2026-03-12 16:55:04 - __main__ - INFO - Ruta DBF: DbfRed
+2026-03-12 16:55:04 - __main__ - INFO - Sincronización automática cada 10 minutos
+2026-03-12 16:55:04 - __main__ - INFO - Ambiente: production
+2026-03-12 16:55:04 - __main__ - INFO - ================================================================================
+2026-03-12 16:55:20 - src.api - WARNING - Acceso sin API key desde 127.0.0.1 [GET /api/inventario]
