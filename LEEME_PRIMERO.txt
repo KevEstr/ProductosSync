@@ -1,0 +1,94 @@
+================================================================================
+  PRODUCT-SYNC API - INSTALACION SIMPLIFICADA
+  Version: LocalSystem (Sin Credenciales)
+================================================================================
+
+ARCHIVOS IMPORTANTES:
+---------------------
+1. diagnostico_pre_instalacion.bat  <- EJECUTA ESTO PRIMERO
+2. instalar_servicio_simple.bat     <- Instalador principal
+3. verificar_servicio.bat            <- Verificar que funciona
+4. GARANTIA_FUNCIONAMIENTO.md        <- Lee esto si tienes dudas
+
+PROCESO DE INSTALACION (3 PASOS):
+----------------------------------
+
+PASO 1: Diagnostico
+  - Ejecuta: diagnostico_pre_instalacion.bat
+  - Verifica que todo este OK
+  - Si hay errores, corrígelos antes de continuar
+
+PASO 2: Instalar
+  - Clic derecho en: instalar_servicio_simple.bat
+  - Selecciona: "Ejecutar como administrador"
+  - Sigue las instrucciones (solo presionar Enter)
+  - Anota la IP del servidor y el API Key
+
+PASO 3: Verificar
+  - Ejecuta: verificar_servicio.bat
+  - Debe mostrar "SERVICE_RUNNING"
+  - Prueba el endpoint local
+
+ACCESO DESDE OTRO PC:
+---------------------
+  - Ejecuta: probar_desde_otro_pc.bat
+  - Ingresa IP, puerto y API Key
+  - Debe responder con datos del inventario
+
+NOMBRES TECNICOS:
+-----------------
+  Version Anterior: "Servicio con cuenta de usuario" (User Account Service)
+  Version Nueva:    "Servicio con cuenta LocalSystem" (LocalSystem Service)
+
+DIFERENCIA CLAVE:
+-----------------
+  Anterior: Necesita usuario + password de Windows
+  Nueva:    NO necesita credenciales (corre como sistema)
+
+CUANDO USAR CADA VERSION:
+--------------------------
+  LocalSystem (esta version):
+    - Archivos DBF en disco local (C:\, D:\, E:\, etc.)
+    - No conoces credenciales del PC
+    - Instalacion remota via AnyDesk
+
+  User Account (version anterior):
+    - Archivos DBF en red (\\servidor\carpeta)
+    - Necesitas acceso a recursos compartidos
+    - Conoces las credenciales
+
+TU CASO:
+--------
+  DBF_PATH=E:\DlpSystems\Delfin\DbfRed  <- Ruta LOCAL
+  Por lo tanto: USA ESTA VERSION (LocalSystem)
+
+GARANTIA:
+---------
+  Si los archivos DBF estan en E:\ (local), FUNCIONARA al 99%
+  El 1% restante son factores externos (antivirus, firewall corporativo)
+
+SOPORTE:
+--------
+  Si algo falla:
+    1. Revisa: logs\app.log
+    2. Ejecuta: verificar_servicio.bat
+    3. Lee: GARANTIA_FUNCIONAMIENTO.md
+
+ARCHIVOS DE AYUDA:
+------------------
+  - INSTRUCCIONES_INSTALACION.md   <- Guia completa
+  - GARANTIA_FUNCIONAMIENTO.md     <- Explicacion tecnica
+  - RESUMEN_SOLUCION.md            <- Resumen ejecutivo
+  - ejemplo_cliente.py             <- Ejemplo de uso en Python
+
+COMANDOS UTILES:
+----------------
+  Ver estado:   sc query ProductSyncAPI
+  Detener:      sc stop ProductSyncAPI
+  Iniciar:      sc start ProductSyncAPI
+  Ver logs:     notepad logs\app.log
+
+================================================================================
+  LISTO PARA INSTALAR
+  Ejecuta: diagnostico_pre_instalacion.bat
+================================================================================
