@@ -1,10 +1,10 @@
 @echo off
-title Instalador Servicio - Product-Sync API
+title Instalador Servicio - API Inventario y Precios
 cd /d "%~dp0"
 
 echo.
 echo ============================================================
-echo   INSTALADOR - Product-Sync API
+echo   INSTALADOR - API Inventario y Precios
 echo ============================================================
 echo.
 
@@ -107,7 +107,7 @@ del "%NSSM_DIR%\nssm.zip" >nul 2>&1
 :nssm_found
 echo [OK] NSSM listo
 
-set SERVICE_NAME=ProductSyncAPI
+set SERVICE_NAME=ProductosSyncAPI
 set APP_DIR=%~dp0
 if "%APP_DIR:~-1%"=="\" set APP_DIR=%APP_DIR:~0,-1%
 set PYTHON_EXE=%APP_DIR%\venv\Scripts\python.exe
@@ -129,7 +129,7 @@ echo [..] Configurando servicio...
 "%NSSM%" remove %SERVICE_NAME% confirm >nul 2>&1
 "%NSSM%" install %SERVICE_NAME% "%PYTHON_EXE%"
 "%NSSM%" set %SERVICE_NAME% AppParameters "\"%APP_SCRIPT%\""
-"%NSSM%" set %SERVICE_NAME% DisplayName "Product-Sync API - Inventario"
+"%NSSM%" set %SERVICE_NAME% DisplayName "API Inventario y Precios"
 "%NSSM%" set %SERVICE_NAME% AppDirectory "%APP_DIR%"
 "%NSSM%" set %SERVICE_NAME% ObjectName "%SVC_USER%" "%SVC_PASS%"
 "%NSSM%" set %SERVICE_NAME% Start SERVICE_AUTO_START
@@ -141,12 +141,10 @@ echo [..] Configurando servicio...
 echo [OK] Servicio registrado
 
 echo.
-echo [..] Configurando firewall...
-set /p SVC_PORT="   Puerto (default 5000): "
-if "%SVC_PORT%"=="" set SVC_PORT=5000
-netsh advfirewall firewall delete rule name="ProductSyncAPI" >nul 2>&1
-netsh advfirewall firewall add rule name="ProductSyncAPI" dir=in action=allow protocol=TCP localport=%SVC_PORT%
-echo [OK] Puerto %SVC_PORT% abierto
+echo [..] Abriendo puerto 8090...
+netsh advfirewall firewall delete rule name="ProductosSyncAPI" >nul 2>&1
+netsh advfirewall firewall add rule name="ProductosSyncAPI" dir=in action=allow protocol=TCP localport=8090
+echo [OK] Puerto 8090 abierto
 
 echo.
 echo [..] Iniciando servicio...
@@ -161,7 +159,7 @@ echo   INSTALACION COMPLETADA
 echo ============================================================
 echo.
 echo   Acceder desde otro PC:
-echo     http://[IP-DE-ESTE-SERVIDOR]:%SVC_PORT%/api/inventario
+echo     http://[IP-DE-ESTE-SERVIDOR]:8090/api/inventario
 echo.
 echo   IP de este servidor:
 ipconfig | findstr "IPv4"

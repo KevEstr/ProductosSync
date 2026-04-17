@@ -1,5 +1,5 @@
 """
-Programador de tareas para sincronización automática de caché
+Programador de tareas para sincronización automática
 """
 import os
 from pathlib import Path
@@ -15,18 +15,17 @@ logger = setup_logger(__name__)
 
 class TaskScheduler:
     """Gestor de tareas programadas"""
-
+    
     def __init__(self):
         self.scheduler = BackgroundScheduler()
         self.is_running = False
         self.dbf_reader = None
         self.last_modification_times = {}
-
+    
     def set_dbf_reader(self, dbf_reader):
         self.dbf_reader = dbf_reader
-
+    
     def _check_files_modified(self) -> bool:
-        """Verifica si los archivos DBF han cambiado desde la última revisión."""
         try:
             if self.dbf_reader is None:
                 return False
@@ -50,38 +49,36 @@ class TaskScheduler:
                     has_changes = True
 
             return has_changes
+
         except Exception as e:
             logger.error(f"Error verificando archivos: {e}")
             return True
-
+    
     def sync_cache(self):
-        """Sincroniza el caché si hay cambios en los archivos o el caché expiró."""
         try:
             if self.dbf_reader is None:
                 return
 
-            folder_changed = self.dbf_reader.refresh_path()
-            if folder_changed:
-                logger.info(f"Nueva carpeta DBF: {self.dbf_reader.dbf_path}")
-                self.last_modification_times.clear()
-
             cache_missing = cache_manager.get('inventario_completo') is None
-            if not (folder_changed or self._check_files_modified() or cache_missing):
+            if not (self._check_files_modified() or cache_missing):
                 return
 
             inicio = datetime.now()
             inventario = self.dbf_reader.get_inventario_con_precios()
             cache_manager.set('inventario_completo', inventario)
+            
+            # Solo invalidar otros cachés si la actualización fue exitosa
             cache_manager.invalidate('productos_True')
             cache_manager.invalidate('productos_False')
             cache_manager.invalidate('precios')
 
-            logger.info(f"Cache actualizado: {len(inventario)} productos en "
-                        f"{(datetime.now() - inicio).total_seconds():.2f}s")
+            logger.info(f"Cache actualizado: {len(inventario)} productos en {(datetime.now() - inicio).total_seconds():.2f}s")
 
         except Exception as e:
-            logger.error(f"Error en sincronización: {e}")
-
+            logger.error(f"Error en sincronizacion: {e}")
+            # NO borrar el caché cuando falla - mantener datos anteriores
+            logger.info("Manteniendo caché anterior debido al error")
+    
     def start(self):
         if self.is_running:
             return

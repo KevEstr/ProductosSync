@@ -15,64 +15,78 @@ logger = setup_logger(__name__)
 
 class DBFReader:
     """Lector de archivos DBF con manejo de errores y validaciones"""
-
+    
     def __init__(self, dbf_path: Optional[str] = None):
         self.encoding = Config.DBF_ENCODING
-        resolved = dbf_path or Config.get_latest_dbf_path()
-        self.dbf_path = Path(resolved)
+        self.dbf_path = Path(dbf_path or Config.DBF_PATH)
 
         if not self.dbf_path.exists():
             raise FileNotFoundError(f"Ruta DBF no encontrada: {self.dbf_path}")
 
         logger.info(f"DBFReader inicializado con ruta: {self.dbf_path}")
-
-    def refresh_path(self) -> bool:
-        """Detecta si hay una carpeta DbfRed más reciente y actualiza la ruta."""
-        new_path = Path(Config.get_latest_dbf_path())
-        if new_path != self.dbf_path:
-            logger.info(f"Nueva carpeta DBF detectada: {self.dbf_path} → {new_path}")
-            self.dbf_path = new_path
-            return True
-        return False
-
+    
     def _sanitize_value(self, value: Any) -> Any:
-        """Limpia y convierte valores a tipos JSON-serializables."""
+        """
+        Limpia y convierte valores a tipos JSON-serializables
+        
+        Args:
+            value: Valor a sanitizar
+            
+        Returns:
+            Valor sanitizado
+        """
         if value is None:
             return None
-
+        
+        # Convertir bytes a string
         if isinstance(value, bytes):
             try:
                 return value.decode(self.encoding).strip()
-            except Exception:
+            except:
                 return None
-
+        
+        # Convertir datetime y date a string ISO
         if isinstance(value, (datetime, date)):
             return value.isoformat()
-
+        
+        # Convertir Decimal a float
         if isinstance(value, Decimal):
             return float(value)
-
+        
+        # Limpiar strings
         if isinstance(value, str):
             value = value.strip()
+            # Remover caracteres nulos y de control
             value = ''.join(char for char in value if ord(char) >= 32 or char in '\n\r\t')
             return value if value else None
-
+        
+        # Convertir booleanos
         if isinstance(value, bool):
             return value
-
+        
+        # Números
         if isinstance(value, (int, float)):
             return value
-
+        
         return str(value)
-
+    
     def _read_dbf_file(self, filename: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Lee un archivo DBF y retorna los registros como diccionarios."""
+        """
+        Lee un archivo DBF y retorna los registros
+        
+        Args:
+            filename: Nombre del archivo DBF
+            limit: Límite de registros a leer (opcional)
+            
+        Returns:
+            Lista de registros como diccionarios
+        """
         filepath = self.dbf_path / filename
-
+        
         if not filepath.exists():
             logger.error(f"Archivo no encontrado: {filepath}")
             raise FileNotFoundError(f"Archivo no encontrado: {filename}")
-
+        
         try:
             table = DBF(
                 str(filepath),
@@ -80,57 +94,82 @@ class DBFReader:
                 ignore_missing_memofile=True,
                 load=True
             )
-
+            
             records = []
             for i, record in enumerate(table):
                 if limit and i >= limit:
                     break
+                
+                # Sanitizar todos los valores del registro
                 clean_record = {
                     key: self._sanitize_value(value)
                     for key, value in record.items()
-                    if not key.startswith('_')
+                    if not key.startswith('_')  # Ignorar campos internos
                 }
                 records.append(clean_record)
-
+            
             logger.info(f"Leídos {len(records)} registros de {filename}")
             return records
-
+            
         except Exception as e:
             logger.error(f"Error leyendo {filename}: {str(e)}")
             raise
-
+    
     def get_productos(self, activos_solo: bool = True) -> List[Dict[str, Any]]:
-        """Obtiene la lista de productos."""
+        """
+        Obtiene la lista de productos
+        
+        Args:
+            activos_solo: Si True, solo retorna productos activos
+            
+        Returns:
+            Lista de productos
+        """
         try:
             productos = self._read_dbf_file('Producto.DBF')
+            
             if activos_solo:
                 productos = [p for p in productos if p.get('ACTIVO') is True]
+            
             logger.info(f"Obtenidos {len(productos)} productos")
             return productos
+            
         except Exception as e:
             logger.error(f"Error obteniendo productos: {str(e)}")
             raise
-
+    
     def get_inventario(self) -> List[Dict[str, Any]]:
-        """Obtiene el inventario actual desde MovMes."""
+        """
+        Obtiene el inventario actual desde MovMes
+        Calcula stock correctamente (inicial + entradas - salidas)
+        
+        Returns:
+            Lista de inventario con disponibilidad
+        """
         try:
+            # Leer MovMes (movimientos mensuales)
             movimientos = self._read_dbf_file('MovMes.DBF')
+            
+            # Leer productos para enriquecer la información
             productos = self._read_dbf_file('Producto.DBF')
             productos_dict = {p['COD_PRODUC']: p for p in productos}
-
+            
             inventario = []
             for mov in movimientos:
                 cod_producto = mov.get('COD_PRODUC', '').strip()
+                
                 if not cod_producto:
                     continue
-
+                
                 producto = productos_dict.get(cod_producto, {})
-
+                
+                # CALCULAR STOCK: inicial + entradas - salidas
                 inicial = mov.get('INICIALMES', 0) or 0
                 entradas = mov.get('ENTRADASME', 0) or 0
                 salidas = mov.get('SALIDASMES', 0) or 0
                 disponible = inicial + entradas - salidas
-
+                
+                # Solo incluir productos con inventario o activos
                 if disponible > 0 or producto.get('ACTIVO'):
                     inventario.append({
                         'codigo': cod_producto,
@@ -144,21 +183,29 @@ class DBFReader:
                         'fecha_actualizacion': mov.get('FECHA', ''),
                         'activo': producto.get('ACTIVO', False)
                     })
-
+            
             logger.info(f"Obtenido inventario de {len(inventario)} productos")
             return inventario
+            
         except Exception as e:
             logger.error(f"Error obteniendo inventario: {str(e)}")
             raise
-
+    
     def get_precios(self) -> List[Dict[str, Any]]:
-        """Obtiene los precios de venta de los productos activos."""
+        """
+        Obtiene los precios de venta de los productos
+        
+        Returns:
+            Lista de productos con sus precios
+        """
         try:
             productos = self._read_dbf_file('Producto.DBF')
+            
             precios = []
             for producto in productos:
                 if not producto.get('ACTIVO'):
                     continue
+                
                 precios.append({
                     'codigo': producto.get('COD_PRODUC', ''),
                     'descripcion': producto.get('DESCRIPCIO', ''),
@@ -174,68 +221,88 @@ class DBFReader:
                     'utilidad_porcentaje': producto.get('UTILIDAD', 0),
                     'activo': producto.get('ACTIVO', False)
                 })
+            
             logger.info(f"Obtenidos precios de {len(precios)} productos")
             return precios
+            
         except Exception as e:
             logger.error(f"Error obteniendo precios: {str(e)}")
             raise
-
+    
     def get_inventario_con_precios(self) -> List[Dict[str, Any]]:
         """
-        Obtiene inventario combinado con precios y todos los campos del producto.
-        Lee el archivo MovMes del mes actual para obtener disponibilidad.
+        Obtiene inventario combinado con precios (endpoint principal)
+        Usa MovMes.DBF y calcula stock correctamente
+        
+        Returns:
+            Lista completa de inventario con disponibilidad y precios
         """
         try:
+            from datetime import datetime
+            
             logger.info("Iniciando lectura de inventario con precios...")
             inicio = datetime.now()
-
+            
+            # Leer solo productos activos
             productos = self._read_dbf_file('Producto.DBF')
-            logger.info(f"Productos leídos: {len(productos)} en "
-                        f"{(datetime.now() - inicio).total_seconds():.2f}s")
-
+            logger.info(f"Productos leídos: {len(productos)} en {(datetime.now() - inicio).total_seconds():.2f}s")
+            
             productos_dict = {p['COD_PRODUC']: p for p in productos if p.get('ACTIVO')}
-
-            # Determinar archivo MovMes del mes actual
-            mes_actual = datetime.now().month
-            archivo_movmes = f'MovMes{mes_actual:02d}.DBF'
-
-            logger.info(f"Leyendo inventario del mes actual: {archivo_movmes}")
-
-            movmes_path = self.dbf_path / archivo_movmes
-            if not movmes_path.exists():
-                logger.warning(f"Archivo {archivo_movmes} no encontrado, usando MovMes.DBF")
-                archivo_movmes = 'MovMes.DBF'
-
+            
+            # Usar MovMes.DBF que tiene la estructura completa
+            archivo_movmes = 'MovMes.DBF'
+            logger.info(f"Leyendo inventario desde: {archivo_movmes}")
+            
+            # Diccionario para acumular disponibilidad por producto y centro de costo
             disponibilidad = {}
+            
             try:
                 movimientos = self._read_dbf_file(archivo_movmes)
                 logger.info(f"Registros de movimientos leídos: {len(movimientos)}")
-
+                
+                productos_con_stock = 0
                 for mov in movimientos:
                     cod = mov.get('COD_PRODUC', '').strip()
                     if cod and cod in productos_dict:
+                        # CALCULAR STOCK: inicial + entradas - salidas
                         inicial = mov.get('INICIALMES', 0) or 0
                         entradas = mov.get('ENTRADASME', 0) or 0
                         salidas = mov.get('SALIDASMES', 0) or 0
-
+                        actual = inicial + entradas - salidas
+                        
+                        # Acumular por producto (puede haber múltiples centros de costo)
                         if cod not in disponibilidad:
                             disponibilidad[cod] = 0
-                        disponibilidad[cod] += (inicial + entradas - salidas)
-
-                logger.info(f"Productos con movimientos: {len(disponibilidad)}")
+                        disponibilidad[cod] += actual
+                        
+                        if actual > 0:
+                            productos_con_stock += 1
+                
+                logger.info(f"Productos con stock > 0: {productos_con_stock}")
+                logger.info(f"Productos únicos con movimientos: {len(disponibilidad)}")
+                
             except Exception as e:
                 logger.error(f"Error leyendo {archivo_movmes}: {e}")
-
-            # Construir resultado con TODOS los campos del maestro
+                # Continuar sin movimientos
+            
+            # Construir resultado - SOLO productos con stock disponible > 0
             resultado = []
+            productos_sin_stock = 0
+            
             for cod_producto, producto in productos_dict.items():
+                stock_disponible = disponibilidad.get(cod_producto, 0)
+                
+                # Filtrar: solo incluir productos con stock > 0
+                if stock_disponible <= 0:
+                    productos_sin_stock += 1
+                    continue
+                
                 resultado.append({
+                    # Campos principales usados por integraciones existentes
                     'codigo': cod_producto,
                     'descripcion': producto.get('DESCRIPCIO', ''),
                     'referencia': producto.get('REFERENCIA', ''),
-                    'cod_largo': producto.get('COD_LARGO', ''),
-                    'cod_invent': producto.get('COD_INVENT', ''),
-                    'disponible': disponibilidad.get(cod_producto, 0),
+                    'disponible': stock_disponible,
                     'costo': producto.get('COSTO', 0),
                     'costo_promedio': producto.get('COSTO_PROM', 0),
                     'precio_venta_1': producto.get('VENTA1', 0),
@@ -247,6 +314,10 @@ class DBFReader:
                     'inc': producto.get('INC', 0),
                     'utilidad_porcentaje': producto.get('UTILIDAD', 0),
                     'ret_fuente': producto.get('RET_FUENTE', ''),
+
+                    # Campos adicionales del maestro de productos
+                    'cod_largo': producto.get('COD_LARGO', ''),
+                    'cod_invent': producto.get('COD_INVENT', ''),
                     'factor': producto.get('FACTOR', 0),
                     'sugerido': producto.get('SUGERIDO', 0),
                     'rotacion': producto.get('ROTACION', 0),
@@ -254,7 +325,7 @@ class DBFReader:
                     'medida': producto.get('MEDIDA', ''),
                     'atributo1': producto.get('ATRIBUTO1', ''),
                     'atributo2': producto.get('ATRIBUTO2', ''),
-                    'decimal_flag': producto.get('DECIMAL', False),
+                    'decimal': producto.get('DECIMAL', False),
                     'touch': producto.get('TOUCH', False),
                     'und_empaque': producto.get('UND_EMPAQU', 0),
                     'porcen1': producto.get('PORCEN1', 0),
@@ -264,7 +335,7 @@ class DBFReader:
                     'porcen5': producto.get('PORCEN5', 0),
                     'impuesto': producto.get('IMPUESTO', 0),
                     'tipo_impto': producto.get('TIPO_IMPTO', 0),
-                    'inventario_flag': producto.get('INVENTARIO', False),
+                    'inventario': producto.get('INVENTARIO', False),
                     'gravado': producto.get('GRAVADO', 0),
                     'obligatori': producto.get('OBLIGATORI', False),
                     'biencubier': producto.get('BIENCUBIER', False),
@@ -274,10 +345,11 @@ class DBFReader:
                     'es_gratuito': producto.get('ESGRATUITO', False),
                     'activo': True
                 })
-
-            logger.info(f"Obtenido inventario completo de {len(resultado)} productos")
+            
+            logger.info(f"Obtenido inventario de {len(resultado)} productos con stock > 0")
+            logger.info(f"Excluidos {productos_sin_stock} productos sin stock")
             return resultado
-
+            
         except Exception as e:
             logger.error(f"Error obteniendo inventario con precios: {str(e)}")
             raise

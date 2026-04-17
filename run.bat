@@ -1,5 +1,5 @@
 @echo off
-title Product-Sync API
+title API Inventario y Precios
 
 for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command ^
     "$paths = @(); " ^
@@ -57,5 +57,5 @@ if exist "venv\Scripts\python.exe" (
     echo [OK] Usando entorno virtual
 )
 
-echo [OK] Iniciando Product-Sync API...
+echo [OK] Iniciando API...
 %PYTHON% app.py
