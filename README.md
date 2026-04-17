@@ -57,9 +57,60 @@ http://localhost:5000/health
 
 ## 🌐 Acceso desde Internet (Exponer API al mundo)
 
-Para que cualquier PC del mundo pueda acceder a tu API, sigue estos pasos:
+Tienes 2 opciones para que cualquier PC del mundo pueda acceder a tu API:
 
-### Opción 1: Configurar Router (Port Forwarding)
+### Opción 1: Port Forwarding en Router (Tiempo real)
+
+Configurar Port Forwarding en tu router para el puerto 8090 → IP local del servidor.
+
+**Ventajas:**
+- ✅ API en tiempo real
+- ✅ Todos los endpoints disponibles (GET, POST, etc.)
+
+**Desventajas:**
+- ❌ Requiere acceso al router
+- ❌ Configuración manual
+
+**Guía:** Ver sección "Port Forwarding" más abajo.
+
+---
+
+### Opción 2: Cloudflare R2 (Recomendado si no tienes acceso al router)
+
+Sube automáticamente el inventario a Cloudflare R2 cada 30 minutos.
+
+**Ventajas:**
+- ✅ Sin Port Forwarding
+- ✅ URL pública permanente
+- ✅ HTTPS incluido
+- ✅ Gratis (10GB/mes)
+- ✅ CDN global (súper rápido)
+
+**Desventajas:**
+- ❌ Actualización cada 30 minutos (no tiempo real)
+- ❌ Solo lectura (archivos JSON)
+
+**Guía completa:** Ver archivo `GUIA_CLOUDFLARE_R2.md`
+
+**Configuración rápida:**
+1. Crear cuenta en cloudflare.com
+2. Crear bucket R2
+3. Obtener credenciales
+4. Configurar en `.env`:
+   ```env
+   CLOUDFLARE_ENABLED=True
+   CLOUDFLARE_ACCOUNT_ID=tu_account_id
+   CLOUDFLARE_ACCESS_KEY_ID=tu_access_key
+   CLOUDFLARE_SECRET_ACCESS_KEY=tu_secret_key
+   CLOUDFLARE_BUCKET_NAME=tu_bucket
+   ```
+5. Reinstalar dependencias: `.\venv\Scripts\pip.exe install -r requirements.txt`
+6. Reiniciar servicio: `sc stop ProductosSyncAPI && sc start ProductosSyncAPI`
+7. Acceder a: `https://tu-bucket.r2.dev/inventario.json`
+
+---
+
+### Port Forwarding (Opción 1 - Detalle)
 
 1. Obtener tu IP local:
 ```bash

@@ -26,6 +26,13 @@ class Config:
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
     LOG_FILE = os.getenv('LOG_FILE', 'logs/app.log')
 
+    # Cloudflare R2 Configuration
+    CLOUDFLARE_ENABLED = os.getenv('CLOUDFLARE_ENABLED', 'False').lower() == 'true'
+    CLOUDFLARE_ACCOUNT_ID = os.getenv('CLOUDFLARE_ACCOUNT_ID', '')
+    CLOUDFLARE_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_ACCESS_KEY_ID', '')
+    CLOUDFLARE_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_SECRET_ACCESS_KEY', '')
+    CLOUDFLARE_BUCKET_NAME = os.getenv('CLOUDFLARE_BUCKET_NAME', '')
+
     @staticmethod
     def init_app():
         Config.CACHE_DIR.mkdir(parents=True, exist_ok=True)

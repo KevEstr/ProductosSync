@@ -9,6 +9,7 @@ from datetime import datetime
 from src.config import Config
 from src.logger import setup_logger
 from src.cache_manager import cache_manager
+from src.cloudflare_uploader import cloudflare_uploader
 
 logger = setup_logger(__name__)
 
@@ -73,6 +74,22 @@ class TaskScheduler:
             cache_manager.invalidate('precios')
 
             logger.info(f"Cache actualizado: {len(inventario)} productos en {(datetime.now() - inicio).total_seconds():.2f}s")
+            
+            # Subir a Cloudflare R2 si está habilitado
+            if Config.CLOUDFLARE_ENABLED:
+                try:
+                    cloudflare_uploader.upload_inventario(inventario)
+                    
+                    # También subir productos y precios
+                    productos = self.dbf_reader.get_productos(activos_solo=True)
+                    cloudflare_uploader.upload_productos(productos)
+                    
+                    precios = self.dbf_reader.get_precios()
+                    cloudflare_uploader.upload_precios(precios)
+                    
+                except Exception as cf_error:
+                    logger.error(f"Error subiendo a Cloudflare R2: {cf_error}")
+                    # No fallar la sincronización si falla Cloudflare
 
         except Exception as e:
             logger.error(f"Error en sincronizacion: {e}")
