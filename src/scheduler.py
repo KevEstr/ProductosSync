@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime
 from src.config import Config
 from src.logger import setup_logger
@@ -56,6 +57,7 @@ class TaskScheduler:
             return True
     
     def sync_cache(self):
+        """Sincroniza el caché local (cada 30 minutos)"""
         try:
             if self.dbf_reader is None:
                 return
@@ -73,42 +75,121 @@ class TaskScheduler:
             cache_manager.invalidate('productos_False')
             cache_manager.invalidate('precios')
 
-            logger.info(f"Cache actualizado: {len(inventario)} productos en {(datetime.now() - inicio).total_seconds():.2f}s")
-            
-            # Subir a Cloudflare R2 si está habilitado
-            if Config.CLOUDFLARE_ENABLED:
-                try:
-                    cloudflare_uploader.upload_inventario(inventario)
-                    
-                    # También subir productos y precios
-                    productos = self.dbf_reader.get_productos(activos_solo=True)
-                    cloudflare_uploader.upload_productos(productos)
-                    
-                    precios = self.dbf_reader.get_precios()
-                    cloudflare_uploader.upload_precios(precios)
-                    
-                except Exception as cf_error:
-                    logger.error(f"Error subiendo a Cloudflare R2: {cf_error}")
-                    # No fallar la sincronización si falla Cloudflare
+            logger.info(f"Cache local actualizado: {len(inventario)} productos en {(datetime.now() - inicio).total_seconds():.2f}s")
 
         except Exception as e:
-            logger.error(f"Error en sincronizacion: {e}")
-            # NO borrar el caché cuando falla - mantener datos anteriores
+            logger.error(f"Error en sincronizacion de cache: {e}")
             logger.info("Manteniendo caché anterior debido al error")
+    
+    def sync_cloudflare(self):
+        """Sincroniza con Cloudflare R2 (3 veces al día: 6 AM, 12 PM, 6 PM)"""
+        try:
+            if self.dbf_reader is None:
+                logger.warning("DBF Reader no inicializado, omitiendo subida a Cloudflare")
+                return
+            
+            if not Config.CLOUDFLARE_ENABLED:
+                logger.debug("Cloudflare deshabilitado, omitiendo subida")
+                return
+            
+            logger.info("=" * 80)
+            logger.info(f"INICIANDO SINCRONIZACION CON CLOUDFLARE R2 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info("=" * 80)
+            
+            inicio = datetime.now()
+            
+            # Obtener datos actualizados
+            inventario = self.dbf_reader.get_inventario_con_precios()
+            productos = self.dbf_reader.get_productos(activos_solo=True)
+            precios = self.dbf_reader.get_precios()
+            
+            # Subir a Cloudflare R2
+            success_count = 0
+            
+            if cloudflare_uploader.upload_inventario(inventario):
+                success_count += 1
+            
+            if cloudflare_uploader.upload_productos(productos):
+                success_count += 1
+            
+            if cloudflare_uploader.upload_precios(precios):
+                success_count += 1
+            
+            tiempo_total = (datetime.now() - inicio).total_seconds()
+            
+            if success_count == 3:
+                logger.info(f"SINCRONIZACION EXITOSA: {success_count}/3 archivos subidos en {tiempo_total:.2f}s")
+            else:
+                logger.warning(f"SINCRONIZACION PARCIAL: {success_count}/3 archivos subidos en {tiempo_total:.2f}s")
+            
+            logger.info("=" * 80)
+            
+        except Exception as e:
+            logger.error(f"Error en sincronizacion con Cloudflare R2: {e}")
+            logger.info("La API local sigue funcionando normalmente")
     
     def start(self):
         if self.is_running:
             return
         try:
+            # Job 1: Sincronización de caché local cada 30 minutos
             self.scheduler.add_job(
                 func=self.sync_cache,
                 trigger=IntervalTrigger(minutes=Config.SYNC_INTERVAL_MINUTES),
-                id='sync_cache',
+                id='sync_cache_local',
+                name='Sincronización de caché local',
                 replace_existing=True
             )
+            logger.info(f"Job programado: Caché local cada {Config.SYNC_INTERVAL_MINUTES} minutos")
+            
+            # Job 2: Sincronización con Cloudflare 3 veces al día
+            if Config.CLOUDFLARE_ENABLED:
+                # Madrugada: 6:00 AM
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger=CronTrigger(hour=6, minute=0),
+                    id='sync_cloudflare_morning',
+                    name='Cloudflare - Madrugada (6 AM)',
+                    replace_existing=True
+                )
+                
+                # Mediodía: 12:00 PM
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger=CronTrigger(hour=12, minute=0),
+                    id='sync_cloudflare_noon',
+                    name='Cloudflare - Mediodía (12 PM)',
+                    replace_existing=True
+                )
+                
+                # Tarde: 6:00 PM (18:00)
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger=CronTrigger(hour=18, minute=0),
+                    id='sync_cloudflare_evening',
+                    name='Cloudflare - Tarde (6 PM)',
+                    replace_existing=True
+                )
+                
+                logger.info("Jobs programados: Cloudflare R2 a las 6 AM, 12 PM y 6 PM")
+                
+                # Subida inicial inmediata (solo si no hay datos en R2)
+                logger.info("Programando subida inicial a Cloudflare en 2 minutos...")
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger='date',
+                    run_date=datetime.now().replace(second=0, microsecond=0) + __import__('datetime').timedelta(minutes=2),
+                    id='sync_cloudflare_initial',
+                    name='Cloudflare - Subida inicial',
+                    replace_existing=True
+                )
+            else:
+                logger.info("Cloudflare R2 deshabilitado - No se programaron subidas")
+            
             self.scheduler.start()
             self.is_running = True
-            logger.info(f"Scheduler iniciado. Intervalo: {Config.SYNC_INTERVAL_MINUTES} minutos")
+            logger.info("Scheduler iniciado correctamente")
+            
         except Exception as e:
             logger.error(f"Error iniciando scheduler: {e}")
             raise
