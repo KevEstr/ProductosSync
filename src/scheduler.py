@@ -142,36 +142,54 @@ class TaskScheduler:
             )
             logger.info(f"Job programado: Caché local cada {Config.SYNC_INTERVAL_MINUTES} minutos")
             
-            # Job 2: Sincronización con Cloudflare 3 veces al día
+            # Job 2: Sincronización con Cloudflare cada 2 horas (9:30 AM - 5:30 PM, Lun-Vie)
             if Config.CLOUDFLARE_ENABLED:
-                # Madrugada: 6:00 AM
+                # 9:30 AM
                 self.scheduler.add_job(
                     func=self.sync_cloudflare,
-                    trigger=CronTrigger(hour=6, minute=0),
-                    id='sync_cloudflare_morning',
-                    name='Cloudflare - Madrugada (6 AM)',
+                    trigger=CronTrigger(day_of_week='mon-fri', hour=9, minute=30),
+                    id='sync_cloudflare_0930',
+                    name='Cloudflare - 9:30 AM',
                     replace_existing=True
                 )
                 
-                # Mediodía: 12:00 PM
+                # 11:30 AM
                 self.scheduler.add_job(
                     func=self.sync_cloudflare,
-                    trigger=CronTrigger(hour=12, minute=0),
-                    id='sync_cloudflare_noon',
-                    name='Cloudflare - Mediodía (12 PM)',
+                    trigger=CronTrigger(day_of_week='mon-fri', hour=11, minute=30),
+                    id='sync_cloudflare_1130',
+                    name='Cloudflare - 11:30 AM',
                     replace_existing=True
                 )
                 
-                # Tarde: 6:00 PM (18:00)
+                # 1:30 PM (13:30)
                 self.scheduler.add_job(
                     func=self.sync_cloudflare,
-                    trigger=CronTrigger(hour=18, minute=0),
-                    id='sync_cloudflare_evening',
-                    name='Cloudflare - Tarde (6 PM)',
+                    trigger=CronTrigger(day_of_week='mon-fri', hour=13, minute=30),
+                    id='sync_cloudflare_1330',
+                    name='Cloudflare - 1:30 PM',
                     replace_existing=True
                 )
                 
-                logger.info("Jobs programados: Cloudflare R2 a las 6 AM, 12 PM y 6 PM")
+                # 3:30 PM (15:30)
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger=CronTrigger(day_of_week='mon-fri', hour=15, minute=30),
+                    id='sync_cloudflare_1530',
+                    name='Cloudflare - 3:30 PM',
+                    replace_existing=True
+                )
+                
+                # 5:30 PM (17:30)
+                self.scheduler.add_job(
+                    func=self.sync_cloudflare,
+                    trigger=CronTrigger(day_of_week='mon-fri', hour=17, minute=30),
+                    id='sync_cloudflare_1730',
+                    name='Cloudflare - 5:30 PM',
+                    replace_existing=True
+                )
+                
+                logger.info("Jobs programados: Cloudflare R2 cada 2 horas (9:30 AM - 5:30 PM, Lun-Vie)")
                 
                 # Subida inicial inmediata (solo si no hay datos en R2)
                 logger.info("Programando subida inicial a Cloudflare en 2 minutos...")
