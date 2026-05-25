@@ -18,6 +18,13 @@ class Config:
 
     SYNC_INTERVAL_MINUTES = int(os.getenv('SYNC_INTERVAL_MINUTES', 30))
 
+    # Bodegas (CEN_COSTO) permitidas, separadas por coma. Vacío = todas.
+    BODEGAS_PERMITIDAS = [
+        b.strip()
+        for b in os.getenv('BODEGAS_PERMITIDAS', '0101,0102').split(',')
+        if b.strip()
+    ]
+
     ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*')
 
     CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', 10800))

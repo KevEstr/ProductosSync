@@ -161,6 +161,11 @@ class DBFReader:
                 if not cod_producto:
                     continue
                 
+                # Filtrar por bodegas permitidas
+                cen_costo = (mov.get('CEN_COSTO') or '').strip()
+                if Config.BODEGAS_PERMITIDAS and cen_costo not in Config.BODEGAS_PERMITIDAS:
+                    continue
+                
                 producto = productos_dict.get(cod_producto, {})
                 
                 # CALCULAR STOCK: inicial + entradas - salidas
@@ -264,6 +269,11 @@ class DBFReader:
                 for mov in movimientos:
                     cod = mov.get('COD_PRODUC', '').strip()
                     if cod and cod in productos_dict:
+                        # Filtrar por bodegas permitidas
+                        cen_costo = (mov.get('CEN_COSTO') or '').strip()
+                        if Config.BODEGAS_PERMITIDAS and cen_costo not in Config.BODEGAS_PERMITIDAS:
+                            continue
+
                         # CALCULAR STOCK: inicial + entradas - salidas
                         inicial = mov.get('INICIALMES', 0) or 0
                         entradas = mov.get('ENTRADASME', 0) or 0
