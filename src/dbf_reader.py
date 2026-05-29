@@ -154,7 +154,8 @@ class DBFReader:
             productos = self._read_dbf_file('Producto.DBF')
             productos_dict = {p['COD_PRODUC']: p for p in productos}
             
-            inventario = []
+            # Guardar solo la fila más reciente por (producto, bodega)
+            ultima_fila = {}
             for mov in movimientos:
                 cod_producto = mov.get('COD_PRODUC', '').strip()
                 
@@ -166,26 +167,44 @@ class DBFReader:
                 if Config.BODEGAS_PERMITIDAS and cen_costo not in Config.BODEGAS_PERMITIDAS:
                     continue
                 
-                producto = productos_dict.get(cod_producto, {})
+                fecha = mov.get('FECHA') or ''
+                clave = (cod_producto, cen_costo)
                 
-                # CALCULAR STOCK: inicial + entradas - salidas
+                if clave not in ultima_fila or fecha > ultima_fila[clave]['fecha']:
+                    ultima_fila[clave] = {'fecha': fecha, 'mov': mov}
+            
+            # Acumular stock por producto (sumando bodegas)
+            disponibilidad = {}
+            for (cod_producto, cen_costo), datos in ultima_fila.items():
+                mov = datos['mov']
                 inicial = mov.get('INICIALMES', 0) or 0
                 entradas = mov.get('ENTRADASME', 0) or 0
                 salidas = mov.get('SALIDASMES', 0) or 0
-                disponible = inicial + entradas - salidas
+                stock = inicial + entradas - salidas
                 
-                # Solo incluir productos con inventario o activos
+                if cod_producto not in disponibilidad:
+                    disponibilidad[cod_producto] = {'stock': 0, 'inicial': 0, 'entradas': 0, 'salidas': 0, 'cen_costo': cen_costo, 'fecha': datos['fecha']}
+                disponibilidad[cod_producto]['stock'] += stock
+                disponibilidad[cod_producto]['inicial'] += inicial
+                disponibilidad[cod_producto]['entradas'] += entradas
+                disponibilidad[cod_producto]['salidas'] += salidas
+            
+            inventario = []
+            for cod_producto, info in disponibilidad.items():
+                producto = productos_dict.get(cod_producto, {})
+                disponible = info['stock']
+                
                 if disponible > 0 or producto.get('ACTIVO'):
                     inventario.append({
                         'codigo': cod_producto,
                         'descripcion': producto.get('DESCRIPCIO', ''),
                         'referencia': producto.get('REFERENCIA', ''),
                         'disponible': disponible,
-                        'inicial_mes': inicial,
-                        'entradas_mes': entradas,
-                        'salidas_mes': salidas,
-                        'centro_costo': mov.get('CEN_COSTO', ''),
-                        'fecha_actualizacion': mov.get('FECHA', ''),
+                        'inicial_mes': info['inicial'],
+                        'entradas_mes': info['entradas'],
+                        'salidas_mes': info['salidas'],
+                        'centro_costo': info['cen_costo'],
+                        'fecha_actualizacion': info['fecha'],
                         'activo': producto.get('ACTIVO', False)
                     })
             
@@ -258,14 +277,15 @@ class DBFReader:
             archivo_movmes = 'MovMes.DBF'
             logger.info(f"Leyendo inventario desde: {archivo_movmes}")
             
-            # Diccionario para acumular disponibilidad por producto y centro de costo
+            # Diccionario para guardar solo la fila más reciente por (producto, bodega)
+            # Clave: (cod_producto, cen_costo) -> {fecha, stock}
+            ultima_fila = {}
             disponibilidad = {}
             
             try:
                 movimientos = self._read_dbf_file(archivo_movmes)
                 logger.info(f"Registros de movimientos leídos: {len(movimientos)}")
                 
-                productos_con_stock = 0
                 for mov in movimientos:
                     cod = mov.get('COD_PRODUC', '').strip()
                     if cod and cod in productos_dict:
@@ -274,19 +294,26 @@ class DBFReader:
                         if Config.BODEGAS_PERMITIDAS and cen_costo not in Config.BODEGAS_PERMITIDAS:
                             continue
 
-                        # CALCULAR STOCK: inicial + entradas - salidas
-                        inicial = mov.get('INICIALMES', 0) or 0
-                        entradas = mov.get('ENTRADASME', 0) or 0
-                        salidas = mov.get('SALIDASMES', 0) or 0
-                        actual = inicial + entradas - salidas
+                        # Obtener fecha del registro para comparar
+                        fecha = mov.get('FECHA') or ''
+                        clave = (cod, cen_costo)
                         
-                        # Acumular por producto (puede haber múltiples centros de costo)
-                        if cod not in disponibilidad:
-                            disponibilidad[cod] = 0
-                        disponibilidad[cod] += actual
-                        
-                        if actual > 0:
-                            productos_con_stock += 1
+                        # Solo quedarse con la fila más reciente por (producto, bodega)
+                        if clave not in ultima_fila or fecha > ultima_fila[clave]['fecha']:
+                            inicial = mov.get('INICIALMES', 0) or 0
+                            entradas = mov.get('ENTRADASME', 0) or 0
+                            salidas = mov.get('SALIDASMES', 0) or 0
+                            actual = inicial + entradas - salidas
+                            ultima_fila[clave] = {'fecha': fecha, 'stock': actual}
+                
+                # Ahora sumar entre bodegas por producto
+                productos_con_stock = 0
+                for (cod, cen_costo), datos in ultima_fila.items():
+                    if cod not in disponibilidad:
+                        disponibilidad[cod] = 0
+                    disponibilidad[cod] += datos['stock']
+                    if datos['stock'] > 0:
+                        productos_con_stock += 1
                 
                 logger.info(f"Productos con stock > 0: {productos_con_stock}")
                 logger.info(f"Productos únicos con movimientos: {len(disponibilidad)}")
